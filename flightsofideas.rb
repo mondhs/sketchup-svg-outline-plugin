@@ -44,4 +44,11 @@ flightsOfIdeasExtensionTools = SketchupExtension.new $uStrings.GetString("Flight
 flightsOfIdeasExtensionTools.description=$uStrings.GetString("Go straight to the Flights Of Ideas website.")
 flightsOfIdeasExtensionTools.version = "0.99999.b1"
 Sketchup.register_extension flightsOfIdeasExtensionTools, true
+if FLIGHTS_OF_IDEAS_DEV
+  $uStrings = LanguageHandler.new("FlightsOfIdeasReloadTool")
+  flightsOfIdeasReloadTools = SketchupExtension.new $uStrings.GetString("FlightsOfIdeasReloadTool"), "#{base_dir}/reload_tool.rb"
+  flightsOfIdeasReloadTools.description=$uStrings.GetString("Reload the code without restarting Sketchup")
+  flightsOfIdeasReloadTools.version = "0.99999.b1"
+  Sketchup.register_extension flightsOfIdeasReloadTools, true
+end
 ###########################################################

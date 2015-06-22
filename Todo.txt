@@ -1,0 +1,7 @@
+Handle Inches Better
+Output the SVG from 0,0 even if the face is grabbed from somewhere else
+Keep it from rotating the sheet
+If the faces are nested - keep them nested
+
+Be able to call this programatically with most of the options being chosen by the api
+

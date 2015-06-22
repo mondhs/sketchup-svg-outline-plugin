@@ -1,6 +1,6 @@
-require 'sketchup.rb'
-require 'FlightsOfIdeas/flightsOfIdeasCommon.rb'
-require 'FlightsOfIdeas/laserScript.rb'
+
+load 'FlightsOfIdeas/flightsOfIdeasCommon.rb'
+load 'FlightsOfIdeas/laserScript.rb'
 
 ###########################################################
 #
@@ -23,7 +23,7 @@ require 'FlightsOfIdeas/laserScript.rb'
 ###########################################################
 
 class SvgExport
-	
+	MM_TO_IN ||= 0.0393700787
 	#######################################################
 	# New Template
 	#######################################################	
@@ -60,7 +60,7 @@ class SvgExport
 		# Border inside of SVG document
 		@paperBorder = Sketchup.active_model.get_attribute "foi_svg_export", "paperBorder", "10"	
 		# Units to use in SVG file
-		@units = Sketchup.active_model.get_attribute "foi_svg_export", "units", "mm"		
+		@units = Sketchup.active_model.get_attribute "foi_svg_export", "units", "in"
 		# Whether to export hidden lines
 		@exportHiddenLines = Sketchup.active_model.get_attribute "foi_svg_export", "exportHidden", false
 		# Whether to export outlines
@@ -83,10 +83,10 @@ class SvgExport
 		@orphanRGB = Sketchup.active_model.get_attribute "foi_svg_export", "orphanRGB", "00FF00"
 		@annotationRGB = Sketchup.active_model.get_attribute "foi_svg_export", "annotationRGB", "000000"
 		# Width of lines for SVG file
-		@outlineWidth = Sketchup.active_model.get_attribute "foi_svg_export", "outlineWidth", "1"
-		@dissectWidth = Sketchup.active_model.get_attribute "foi_svg_export", "dissectWidth", "1"
-		@orphanWidth = Sketchup.active_model.get_attribute "foi_svg_export", "orphanWidth", "1"
-		@annotationWidth = Sketchup.active_model.get_attribute "foi_svg_export", "annotationWidth", "1"		
+		@outlineWidth = Sketchup.active_model.get_attribute "foi_svg_export", "outlineWidth", (@units == "mm" ?  1 : 1 * MM_TO_IN).to_s
+		@dissectWidth = Sketchup.active_model.get_attribute "foi_svg_export", "dissectWidth", (@units == "mm" ?  1 : 1 * MM_TO_IN).to_s
+		@orphanWidth = Sketchup.active_model.get_attribute "foi_svg_export", "orphanWidth", (@units == "mm" ?  1 : 1 * MM_TO_IN).to_s
+		@annotationWidth = Sketchup.active_model.get_attribute "foi_svg_export", "annotationWidth", (@units == "mm" ?  1 : 1 * MM_TO_IN).to_s
 		# SVG Editor to execute if desired
 		@svgEditor = Sketchup.active_model.get_attribute "foi_svg_export", "svgEditor", ""
 		@execEditor = Sketchup.active_model.get_attribute "foi_svg_export", "execEditor", false;
@@ -774,10 +774,10 @@ class SvgExport
 			
 			# Change global maximums and minimums if using inches
 			if @units == "in"
-				@minx[g] = @minx[g]*0.0393700787
-				@miny[g] = @miny[g]*0.0393700787
-				@maxy[g] = @maxy[g]*0.0393700787
-				@maxx[g] = @maxx[g]*0.0393700787
+				@minx[g] = @minx[g]* MM_TO_IN
+				@miny[g] = @miny[g]* MM_TO_IN
+				@maxy[g] = @maxy[g]* MM_TO_IN
+				@maxx[g] = @maxx[g]* MM_TO_IN
 			end
 			for f in 0...@pointArrayGFXY[g].length	
 
@@ -785,8 +785,8 @@ class SvgExport
 				for txt in 0...@textEntities.length
 					if (@textEntities[txt][4] == g) and (@textEntities[txt][5] == f)
 						if @units == "in"
-							@textEntities[txt][6] = @textEntities[txt][6]*0.0393700787
-							@textEntities[txt][7] = @textEntities[txt][7]*0.0393700787
+							@textEntities[txt][6] = @textEntities[txt][6]* MM_TO_IN
+							@textEntities[txt][7] = @textEntities[txt][7]* MM_TO_IN
 						end
 						@textEntities[txt][6] = (@textEntities[txt][6]-@minx[g])+border;
 						@textEntities[txt][7] = ((@textEntities[txt][7]-@miny[g])+border+height);
@@ -800,8 +800,8 @@ class SvgExport
 						
 						# Change units if using inches
 						if @units == "in"
-							@pointArrayGFXY[g][f][i][j][0] = @pointArrayGFXY[g][f][i][j][0]*0.0393700787
-							@pointArrayGFXY[g][f][i][j][1] = @pointArrayGFXY[g][f][i][j][1]*0.0393700787
+							@pointArrayGFXY[g][f][i][j][0] = @pointArrayGFXY[g][f][i][j][0]* MM_TO_IN
+							@pointArrayGFXY[g][f][i][j][1] = @pointArrayGFXY[g][f][i][j][1]* MM_TO_IN
 						end		
 
 						# Move points to reflect border and bounds

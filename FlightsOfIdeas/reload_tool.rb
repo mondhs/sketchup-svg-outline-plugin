@@ -1,11 +1,6 @@
-require 'sketchup.rb'
-require 'extensions.rb'
-require 'LangHandler.rb'
-load 'FlightsOfIdeas/svgExport.rb'
-
 ###########################################################
 #
-#    Scalable Vector Graphics (SVG) from Google Sketchup Faces
+#    Google Sketchup Flights of Ideas Tools
 #    Copyright (C) 2009 Simon Beard (Flights Of Ideas)
 #
 #    This program is free software: you can redistribute it and/or modify
@@ -23,9 +18,16 @@ load 'FlightsOfIdeas/svgExport.rb'
 #
 ###########################################################
 
-# Create a new template
-$template = SvgExport.new()
 
-# Add toolbar and context menu (right-click)
-$template.template_toolbar
-$template.template_context_menu
+toolbar = UI::Toolbar.new "FlightsOfIdeas"
+cmd = UI::Command.new("Reload SVG Code") {
+  SKETCHUP_CONSOLE.clear
+  load 'FlightsOfIdeas/svgExport.rb'
+}
+path = Sketchup.find_support_file "reload-bw.png", "#{FLIGHTS_OF_IDEAS_DIR}/Images/"
+cmd.small_icon = path
+cmd.large_icon = path
+cmd.tooltip = "Reload SVG Code"
+cmd.menu_text = "Reload SVG Code"
+toolbar = toolbar.add_item cmd
+toolbar.show
