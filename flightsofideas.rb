@@ -21,8 +21,7 @@ require 'LangHandler.rb'
 #    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #
 ###########################################################
-SKETCHUP_CONSOLE.show
-FLIGHTS_OF_IDEAS_DEV = true
+FLIGHTS_OF_IDEAS_DEV = true #Set to false if you aren't doing development
 if FLIGHTS_OF_IDEAS_DEV
   $:.unshift "#{File.expand_path(File.dirname(__FILE__))}/sketchup-svg-outline-plugin"
   base_dir = "sketchup-svg-outline-plugin/FlightsOfIdeas"
