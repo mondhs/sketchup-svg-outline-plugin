@@ -117,7 +117,7 @@ class SvgExport
 				self.preferences_dialog();
 			end
 		}		
-		path = Sketchup.find_support_file "CreateSvg.png", "plugins/FlightsOfIdeas/Images/"		
+		path = Sketchup.find_support_file "CreateSvg.png", "#{FLIGHTS_OF_IDEAS_DIR}/Images/"
 		cmd.small_icon = path
 		cmd.large_icon = path
 		cmd.tooltip = "Create 2D SVG file from selected face(s)"

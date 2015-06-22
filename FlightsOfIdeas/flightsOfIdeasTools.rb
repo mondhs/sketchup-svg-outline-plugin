@@ -27,7 +27,7 @@ toolbar = UI::Toolbar.new "FlightsOfIdeas"
 cmd = UI::Command.new("flightsofideas") { 
 	UI.openURL("http://simonbeard.github.io/sketchup-svg-outline-plugin/")
 }		
-path = Sketchup.find_support_file "FlightsOfIdeas.png", "plugins/FlightsOfIdeas/Images/"		
+path = Sketchup.find_support_file "FlightsOfIdeas.png", "#{FLIGHTS_OF_IDEAS_DIR}/Images/"
 cmd.small_icon = path
 cmd.large_icon = path
 cmd.tooltip = "Flights of Ideas Website"
