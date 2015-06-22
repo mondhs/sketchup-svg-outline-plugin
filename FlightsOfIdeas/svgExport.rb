@@ -1,4 +1,3 @@
-
 load 'FlightsOfIdeas/flightsOfIdeasCommon.rb'
 load 'FlightsOfIdeas/laserScript.rb'
 
@@ -501,43 +500,43 @@ class SvgExport
 			if (suEntity.hidden?) and not (@exportHiddenLines)
 				return
 			end
-			
+
 			# If edge is not defining an actual face
 			if suEntity.faces.length == 0
-				
-				# Test whether both end points are on a face (i.e. colinear and within face bounds)				
+
+				# Test whether both end points are on a face (i.e. colinear and within face bounds)
 				for i in 0...@faceGroups.length
 					for j in 0...@faceGroups[i].length
 						if @faceGroups[i][j].typename == "Face"
 							resultS = @faceGroups[i][j].classify_point(suEntity.start)
-							resultE = @faceGroups[i][j].classify_point(suEntity.end)	
+							resultE = @faceGroups[i][j].classify_point(suEntity.end)
 
 							# If points on face
-							if (resultS !=16)  and (resultS !=8)  and (resultS !=0)  and (resultE !=16)  and (resultE !=8)  and (resultE !=0) 
-							
+							if (resultS !=16)  and (resultS !=8)  and (resultS !=0)  and (resultE !=16)  and (resultE !=8)  and (resultE !=0)
+
 								# Add to group and exit
 								@faceGroups[i] = @faceGroups[i].push(suEntity)
 								j = @faceGroups[i].length
-								i = @faceGroups.length	
-								
+								i = @faceGroups.length
+
 								return
 							end
 						end
 					end
 				end
-			end	
-			
+			end
+
 		# If a group then process entities within
 		elsif suEntity.typename == "Group"
-			for i in 0...suEntity.entities.length						
+			for i in 0...suEntity.entities.length
 				self.group_orphan_edges suEntity.entities[i]
 			end
 
 		# If a component then process entities within
 		elsif suEntity.typename == "ComponentInstance"
-			for i in 0...suEntity.definition.entities.length						
+			for i in 0...suEntity.definition.entities.length
 				self.group_orphan_edges suEntity.definition.entities[i]
-			end			
+			end
 		end
 	end
 	
@@ -577,34 +576,34 @@ class SvgExport
 			transformMatrix = FlightsOfIdeasCommon.get_transform_product group[i]
 			
 			if group[i].typename == "Face"
-			
+				puts "Working on a face"
 				# Test if there is a text entity pointing to face
 				for txt in 0...@textEntities.length
 
 					# Only test unused text entities
-					if not (@textEntities[txt][3])			
+					if not (@textEntities[txt][3])
 
 						# Apply inverse transformation to point and test if on face
-						classification = group[i].classify_point (transformMatrix.inverse*@textEntities[txt][1])				
-						
+						classification = group[i].classify_point (transformMatrix.inverse*@textEntities[txt][1])
+
 						# If on edge, vertex, or inside face bounds
-						if (classification == 1) or (classification == 2) or (classification == 4)							
-							
+						if (classification == 1) or (classification == 2) or (classification == 4)
+
 							# Set as used
 							@textEntities[txt][3] = true
-							
+
 							# Set face referencing text
 							@textEntities[txt][4] = groupIndex
 							@textEntities[txt][5] = i
-							
+
 							# Set point for text in SVG
 							insertPoint = FlightsOfIdeasCommon.project_2d_position(transformMatrix.inverse*@textEntities[txt][1], transformMatrix, group[0])
 							@textEntities[txt][6] = insertPoint[0].to_mm
 							@textEntities[txt][7] = insertPoint[1].to_mm
-						end						
+						end
 					end
-				end			
-			
+				end
+
 				# Get loops that bound face
 				loops = group[i].loops			
 				
@@ -623,10 +622,11 @@ class SvgExport
 					for k in 0...vertices.length
 						
 						# Calculate 2D point
+						puts "V #{vertices[k].position.to_a}"
 						point = FlightsOfIdeasCommon.project_2d_point(vertices[k], transformMatrix, group[0])
-
 						# Store point
 						point = point.to_a
+						puts "OPoin is #{point.join(",")}"
 						@pointArrayGFXY[groupIndex][i][j][k] = Array.new(3)
 						@pointArrayGFXY[groupIndex][i][j][k][0] = point[0].to_mm
 						@pointArrayGFXY[groupIndex][i][j][k][1] = point[1].to_mm							
@@ -673,7 +673,7 @@ class SvgExport
 					end					
 				end
 			elsif group[i].typename == "Edge" 
-				
+				puts "Working on edge"
 				# Calculate 2D point
 				pointS = FlightsOfIdeasCommon.project_2d_point(group[i].start, transformMatrix, group[0])
 				pointE = FlightsOfIdeasCommon.project_2d_point(group[i].end, transformMatrix, group[0])

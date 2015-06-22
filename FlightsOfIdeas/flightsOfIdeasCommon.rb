@@ -1,5 +1,3 @@
-require 'sketchup.rb'
-
 ###########################################################
 #
 #    Google Sketchup Common Routines for Flights of Ideas Plugins
@@ -31,7 +29,7 @@ class FlightsOfIdeasCommon
 	#######################################################
 	# Parse routine for context menu and toolbar
 	#######################################################	
-	def FlightsOfIdeasCommon.parse_for_face(suEntity)
+	def self.parse_for_face(suEntity)
 		if suEntity.typename == "Face"
 			if (@@exportFace == nil)
 				@@exportFace = suEntity
@@ -50,7 +48,7 @@ class FlightsOfIdeasCommon
 	#######################################################
 	# Parse routine for context menu and toolbar (make sure that one face is selected)
 	#######################################################	
-	def FlightsOfIdeasCommon.contains_face(selection)	
+	def self.contains_face(selection)
 		@@exportFace = nil
 		
 		for i in 0...selection.length
@@ -65,7 +63,7 @@ class FlightsOfIdeasCommon
 	#######################################################
 	# Parse routine for context menu and toolbar
 	#######################################################	
-	def FlightsOfIdeasCommon.parse_for_edge(suEntity)
+	def self.parse_for_edge(suEntity)
 		if suEntity.typename == "Edge"
 			if (@@selectedEdge == nil)
 				@@selectedEdge = suEntity
@@ -84,7 +82,7 @@ class FlightsOfIdeasCommon
 	#######################################################
 	# Parse routine for context menu and toolbar (check if edges are selected)
 	#######################################################	
-	def FlightsOfIdeasCommon.contains_edge(selection)	
+	def self.contains_edge(selection)
 		@@selectedEdge = nil
 		
 		for i in 0...selection.length
@@ -134,7 +132,7 @@ class FlightsOfIdeasCommon
 	#######################################################
 	# Parse parents of entity for transformations
 	#######################################################	
-	def FlightsOfIdeasCommon.get_transform_product(suEntity)
+	def self.get_transform_product(suEntity)
 		@@transformMatrix = Geom::Transformation.new	
 			
 		# Get parent transformations
@@ -149,8 +147,8 @@ class FlightsOfIdeasCommon
 
 	#######################################################
 	# Find vector resolution for transforming to 2D
-	#######################################################	
-	def FlightsOfIdeasCommon.calculate_2d_vector(vec1, vec2, norm)
+	#######################################################
+	def self.calculate_2d_vector(vec1, vec2, norm)
 					
 		# Check for non vectors
 		if vec1.x==0 and vec1.y==0 and vec1.z==0
@@ -198,49 +196,35 @@ class FlightsOfIdeasCommon
 	#######################################################
 	# Project 3D point as 2D on a face
 	#######################################################	
-	def FlightsOfIdeasCommon.project_2d_point (vertex, tMatrix, face)
-		refPoint = face.loops[0].vertices[0].position
-		normal = face.normal
-		axes = normal.axes		
-		
-		# Apply Sketchup transformation
-		point = vertex.position											
-		point = tMatrix*point
-						
-		# Express as vectors
-		vec1 = Geom::Vector3d.new(point.x-refPoint.x,point.y-refPoint.y,point.z-refPoint.z)
-		vec2 = normal.axes[1]			
-		vec3 = FlightsOfIdeasCommon.calculate_2d_vector(vec1, vec2, normal)
-
-		# Calculate 2D point
-		point.x = refPoint.x+vec3.x
-		point.y = refPoint.y+vec3.y
-		
-		return(point)
+	def self.project_2d_point (vertex, t_matrix, face)
+		project_2d_position(vertex.position, t_matrix, face)
 	end	
 	
 	#######################################################
 	# Project 3D point as 2D on a face
 	#######################################################	
-	def FlightsOfIdeasCommon.project_2d_position (position, tMatrix, face)
+	def self.project_2d_position (position, t_matrix, face)
+		#DJE - this method is the key to getting nesting to work properly.
 		refPoint = face.loops[0].vertices[0].position
 		normal = face.normal
 		axes = normal.axes		
 		
 		# Apply Sketchup transformation
-		point = position											
-		point = tMatrix*point
-						
+		point = position
+		point = t_matrix * point
+
 		# Express as vectors
-		vec1 = Geom::Vector3d.new(point.x-refPoint.x,point.y-refPoint.y,point.z-refPoint.z)
+		vec1 = Geom::Vector3d.new(point.x - refPoint.x, point.y - refPoint.y, point.z - refPoint.z)
 		vec2 = normal.axes[1]			
 		vec3 = FlightsOfIdeasCommon.calculate_2d_vector(vec1, vec2, normal)
 
 		# Calculate 2D point
-		point.x = refPoint.x+vec3.x
-		point.y = refPoint.y+vec3.y
+		point.x = round(refPoint.x + vec3.x)
+		point.y = round(refPoint.y + vec3.y)
 		
 		return(point)
-	end		
-		
+	end
+	def self.round(val)
+		val.to_f.round(4)
+	end
 end
