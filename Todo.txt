@@ -5,3 +5,5 @@ If the faces are nested - keep them nested
 
 Be able to call this programatically with most of the options being chosen by the api
 
+Find a way to strip down the process to just grab an object and draw the points as long the z is 0
+
