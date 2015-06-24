@@ -101,6 +101,7 @@ class FlightsOfIdeasCommon
 		# If a group then process transforms within
 		if suEntity.typename == "Group"
 			if (suEntity.transformation)
+				puts "Group transformation"
 				@@transformMatrix = @@transformMatrix * suEntity.transformation				
 			end
 		
@@ -138,6 +139,7 @@ class FlightsOfIdeasCommon
 		# Get parent transformations
 		if suEntity.parent
 			if suEntity.parent != Sketchup.active_model
+				puts "Looking at the parent for the transformation"
 				self.parse_parent_transforms(suEntity.parent)
 			end
 		end	
@@ -206,16 +208,19 @@ class FlightsOfIdeasCommon
 	def self.project_2d_position (position, t_matrix, face)
 		#DJE - this method is the key to getting nesting to work properly.
 		refPoint = face.loops[0].vertices[0].position
+		puts "Refpoints #{refPoint.to_a.join(",")}"
+		puts "Position #{position.to_a.join(",")}"
 		normal = face.normal
 		axes = normal.axes		
 		
 		# Apply Sketchup transformation
 		point = position
-		point = t_matrix * point
+	#	point = t_matrix * point
 
 		# Express as vectors
 		vec1 = Geom::Vector3d.new(point.x - refPoint.x, point.y - refPoint.y, point.z - refPoint.z)
-		vec2 = normal.axes[1]			
+		puts "Vec1 #{vec1.to_a.join(",")}"
+		vec2 = normal.axes[1]
 		vec3 = FlightsOfIdeasCommon.calculate_2d_vector(vec1, vec2, normal)
 
 		# Calculate 2D point

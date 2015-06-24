@@ -552,7 +552,10 @@ class SvgExport
 		
 		# Get reference point for group
 		refPoint = group[0].loops[0].vertices[0].position
-		
+		puts "Group loops"
+		group[0].loops[0].vertices.each {|v| puts(v.position.to_a.join(","))}
+		puts "###########"
+		#puts "Refpoint for the group is #{refPoint.to_a.join(",")}"
 		# Get parent transformations
 		transformMatrix = FlightsOfIdeasCommon.get_transform_product group[0]
 		
