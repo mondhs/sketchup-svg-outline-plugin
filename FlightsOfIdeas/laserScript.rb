@@ -1,6 +1,3 @@
-#require 'sketchup.rb'
-#require 'FlightsOfIdeas/flightsOfIdeasCommon.rb'
-
 ###########################################################
 #
 #    Scalable Vector Graphics (SVG) from Google Sketchup Faces

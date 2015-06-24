@@ -28,4 +28,3 @@ $template = SvgExport.new()
 
 # Add toolbar and context menu (right-click)
 $template.template_toolbar
-$template.template_context_menu

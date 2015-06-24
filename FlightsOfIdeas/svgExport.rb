@@ -23,18 +23,12 @@ load 'FlightsOfIdeas/laserScript.rb'
 
 class SvgExport
 	MM_TO_IN ||= 0.0393700787
+
 	#######################################################
 	# New Template
 	#######################################################	
-	def initialize()					
-		# The dialog object		
-		@dlg = nil	
-		# Whether the ok dlg is currently open
-		@dlgOpen = false	
-		# The ok dialog object
-		@okdlg = nil	
-		# Whether the dlg is currently open
-		@okdlgOpen = false		
+	def initialize()
+
 		# The face to make into an SVG file		
 		@exportFace = nil	
 		# The actual SVG file for writing
@@ -53,57 +47,45 @@ class SvgExport
 		@faceInSelection = false
 		
 		# Get dictionary preferences (create if none)
-		@prefs = Sketchup.active_model.attribute_dictionary "foi_svg_export", true
+		@prefs =  true
 		# File name to export SVG
-		@svgFilename = Sketchup.active_model.get_attribute "foi_svg_export", "svgFilename", "flightsOfIdeas.svg"
+		@svgFilename = "flightsOfIdeas.svg"
 		# Border inside of SVG document
-		@paperBorder = Sketchup.active_model.get_attribute "foi_svg_export", "paperBorder", "10"	
+		@paperBorder =  "10"
 		# Units to use in SVG file
-		@units = Sketchup.active_model.get_attribute "foi_svg_export", "units", "in"
+		@units =  "in"
 		# Whether to export hidden lines
-		@exportHiddenLines = Sketchup.active_model.get_attribute "foi_svg_export", "exportHidden", false
+		@exportHiddenLines = false
 		# Whether to export outlines
-		@exportOutlines = Sketchup.active_model.get_attribute "foi_svg_export", "exportOutlines", true		
+		@exportOutlines =  true
 		# Whether to export disecting lines (useful when laser etching)
-		@exportInternalLines = Sketchup.active_model.get_attribute "foi_svg_export", "exportEtch", true		
+		@exportInternalLines = true
 		# Whether to export internal lines which are not part of a faces loops (useful when laser etching)
-		@exportOrphanLines = Sketchup.active_model.get_attribute "foi_svg_export", "exportOrphans", true	
+		@exportOrphanLines = true
 		# Whether to export SketchUp text annotations
-		@exportAnnotations = Sketchup.active_model.get_attribute "foi_svg_export", "exportAnnotations", false
+		@exportAnnotations = false
 		# The size of text annotations
-		@annotationHeight = Sketchup.active_model.get_attribute "foi_svg_export", "annotationHeight", "10"	
+		@annotationHeight = "10"
 		# The type of text exported (SVG or laser script)
-		@annotationType = Sketchup.active_model.get_attribute "foi_svg_export", "annotationType", "SVG"
+		@annotationType =  "SVG"
 		# Whether to export as path or lines to SVG file
-		@exportSvgType = Sketchup.active_model.get_attribute "foi_svg_export", "exportSVG", "paths"	
+		@exportSvgType =  "paths"
 		# Colours for SVG file
-		@outlineRGB = Sketchup.active_model.get_attribute "foi_svg_export", "outlineRGB", "0000FF"
-		@dissectRGB = Sketchup.active_model.get_attribute "foi_svg_export", "dissectRGB", "FF0000"
-		@orphanRGB = Sketchup.active_model.get_attribute "foi_svg_export", "orphanRGB", "00FF00"
-		@annotationRGB = Sketchup.active_model.get_attribute "foi_svg_export", "annotationRGB", "000000"
+		@outlineRGB =  "0000FF"
+		@dissectRGB = "FF0000"
+		@orphanRGB =  "00FF00"
+		@annotationRGB =  "000000"
 		# Width of lines for SVG file
-		@outlineWidth = Sketchup.active_model.get_attribute "foi_svg_export", "outlineWidth", (@units == "mm" ?  1 : 1 * MM_TO_IN).to_s
-		@dissectWidth = Sketchup.active_model.get_attribute "foi_svg_export", "dissectWidth", (@units == "mm" ?  1 : 1 * MM_TO_IN).to_s
-		@orphanWidth = Sketchup.active_model.get_attribute "foi_svg_export", "orphanWidth", (@units == "mm" ?  1 : 1 * MM_TO_IN).to_s
-		@annotationWidth = Sketchup.active_model.get_attribute "foi_svg_export", "annotationWidth", (@units == "mm" ?  1 : 1 * MM_TO_IN).to_s
+		@outlineWidth = (@units == "mm" ?  1 : 1 * MM_TO_IN).to_s
+		@dissectWidth =  (@units == "mm" ?  1 : 1 * MM_TO_IN).to_s
+		@orphanWidth =  (@units == "mm" ?  1 : 1 * MM_TO_IN).to_s
+		@annotationWidth = (@units == "mm" ?  1 : 1 * MM_TO_IN).to_s
 		# SVG Editor to execute if desired
-		@svgEditor = Sketchup.active_model.get_attribute "foi_svg_export", "svgEditor", ""
-		@execEditor = Sketchup.active_model.get_attribute "foi_svg_export", "execEditor", false;
+		@svgEditor =  ""
+		@execEditor = false
 	end
 
-	#######################################################
-	# Create UI context menu for creating SVG templates
-	#######################################################	
-	def template_context_menu()
-		UI.add_context_menu_handler { |menu|
-			selection=Sketchup.active_model.selection
-			if FlightsOfIdeasCommon.contains_face selection 
-				menu.add_separator				
-				item = menu.add_item("Export to SVG file") { self.preferences_dialog(); }				
-			end
-		}
-	end
-	
+
 	#######################################################
 	# Create UI toolbar for creating SVG templates
 	#######################################################	
@@ -112,8 +94,8 @@ class SvgExport
 
 		cmd = UI::Command.new("Export to SVG File") { 
 			selection=Sketchup.active_model.selection
-			if FlightsOfIdeasCommon.contains_face selection 
-				self.preferences_dialog();
+			if SvgExport.contains_face selection
+				self.create_svg();
 			end
 		}		
 		path = Sketchup.find_support_file "CreateSvg.png", "#{FLIGHTS_OF_IDEAS_DIR}/Images/"
@@ -128,236 +110,6 @@ class SvgExport
 
 ###########################################################
 
-	#######################################################
-	# Create preferences dialog box for SVG templates
-	#######################################################	
-	def preferences_dialog()
-		
-		# Check that dlg not already opened
-		if not @dlgOpen
-			@dlgOpen = true
-			
-			# Get HTML file for dlg
-			html = File.dirname(__FILE__) + "/svgExportDialog.html";
-			if (html.length == 0)
-				return false;
-			end
-			
-			# Create new dlg
-			@dlg = UI::WebDialog.new "SVG Export Preferences", true
-			@dlg.min_height=600;
-			@dlg.min_width=1024;
-
-			# Set close callback function
-			@dlg.add_action_callback("on_close") {|d,p| @dlgOpen = false; d.close(); }
-			
-			# Set close callback function
-			@dlg.add_action_callback("on_ok") {|d,p| 
-				
-				# Get arguments
-				args = p.split(','); 
-				@svgFilename=args[0]; @paperBorder = args[1]; @units=args[2];
-				@exportSvgType = args[3];				
-				@exportHiddenLines = false;
-				if args[4] == "true"
-					@exportHiddenLines = true;
-				end					
-				@exportOutlines = false;
-				if args[5] == "true"
-					@exportOutlines = true;
-				end					
-				@outlineRGB = args[6];
-				@outlineWidth = args[7];
-				@exportInternalLines = false;
-				if args[8] == "true"
-					@exportInternalLines = true;
-				end
-				@dissectRGB = args[9];
-				@dissectWidth = args[10];
-				@exportOrphanLines = false;
-				if args[11] == "true"
-					@exportOrphanLines = true;
-				end
-				@orphanRGB = args[12];
-				@orphanWidth = args[13];
-				@exportAnnotations = false;
-				if args[14] == "true"
-					@exportAnnotations = true;
-				end			
-				@annotationRGB = args[15];
-				@annotationWidth = args[16];
-				@annotationType = args[17];
-				@annotationHeight = args[18];							
-				@execEditor = false;
-				if args[19] == "true"
-					@execEditor = true;
-					@svgEditor = args[20];
-				end
-				
-				# Store preferences
-				Sketchup.active_model.attribute_dictionary "foi_svg_export", true
-				Sketchup.active_model.set_attribute "foi_svg_export", "svgFilename", @svgFilename
-				Sketchup.active_model.set_attribute "foi_svg_export", "paperBorder", @paperBorder					
-				Sketchup.active_model.set_attribute "foi_svg_export", "units", @units		
-				Sketchup.active_model.set_attribute "foi_svg_export", "exportHidden", @exportHiddenLines
-				Sketchup.active_model.set_attribute "foi_svg_export", "exportOutlines", @exportOutlines				
-				Sketchup.active_model.set_attribute "foi_svg_export", "exportEtch", @exportInternalLines	
-				Sketchup.active_model.set_attribute "foi_svg_export", "exportOrphans", @exportOrphanLines										
-				Sketchup.active_model.set_attribute "foi_svg_export", "exportSVG", @exportSvgType						
-				Sketchup.active_model.set_attribute "foi_svg_export", "exportAnnotations", @exportAnnotations
-				Sketchup.active_model.set_attribute "foi_svg_export", "annotationType", @annotationType
-				Sketchup.active_model.set_attribute "foi_svg_export", "annotationHeight", @annotationHeight
-				Sketchup.active_model.set_attribute "foi_svg_export", "outlineRGB", @outlineRGB
-				Sketchup.active_model.set_attribute "foi_svg_export", "dissectRGB", @dissectRGB
-				Sketchup.active_model.set_attribute "foi_svg_export", "orphanRGB", @orphanRGB
-				Sketchup.active_model.set_attribute "foi_svg_export", "annotationRGB", @annotationRGB
-				Sketchup.active_model.set_attribute "foi_svg_export", "execEditor", @execEditor
-				if (@execEditor)				
-					if (@svgEditor.length > 0)	
-						Sketchup.active_model.set_attribute "foi_svg_export", "svgEditor", @svgEditor;
-					end
-				end
-				
-				# Create the SVG file
-				create_svg;
-				
-				# Close dialog
-				@dlgOpen = false; d.close(); 				
-			}			
-					
-			# Set save as callback function
-			@dlg.add_action_callback("on_file_save") {|d,p| 							
-				name = p.split('/')
-				name = name[name.length-1]
-						
-				output_filename = UI.savepanel("Export to SVG", "", name);
-				
-				# Tidy filename path
-				if (output_filename)
-					name = output_filename.split('\\')
-					@svgFilename = name[0]
-					for i in 1...name.length
-						@svgFilename  = @svgFilename+'/'+name[i]
-					end					
-				end
-				
-				cmd = "setFilename('"+@svgFilename+"')";				
-				d.execute_script(cmd);
-			}			
-			
-			# Set help callback
-			@dlg.add_action_callback("on_help") {|d,p|
-				UI.openURL("http://extensions.sketchup.com/en/content/svg-outline-plugin")
-			}
-			
-			# Set SVG editor configure callback function
-			@dlg.add_action_callback("on_svg_editor_configure") {|d,p| 							
-				name = p.split('/')
-				name = name[name.length-1]
-						
-				@svgEditor = UI.openpanel "Select your SVG editor", "", "*"						
-				
-				# Tidy filename path				
-				if (@svgEditor)
-					name = @svgEditor.split('\\')
-					@svgEditor = name[0]
-					for i in 1...name.length										
-						@svgEditor  = @svgEditor+'/'+name[i]
-					end					
-				end
-				if (@svgEditor)						
-					cmd = "setSvgEditor('"+@svgEditor+"')";				
-					d.execute_script(cmd);
-				end
-			}				
-			
-			# Show the dlg
-			@dlg.set_background_color("f3f0f0");
-			@dlg.set_file(html, nil)
-			@dlg.show{
-				hiddenCheck = "false";
-				if (@exportHiddenLines)
-					hiddenCheck = "true"
-				end		
-				outlineCheck = "false";
-				if (@exportOutlines)
-					outlineCheck = "true"
-				end	
-				linesCheck = "false";
-				if (@exportInternalLines)
-					linesCheck = "true"
-				end
-				orphansCheck = "false";
-				if (@exportOrphanLines)
-					orphansCheck = "true"
-				end	
-				textCheck = "false";
-				if (@exportAnnotations)
-					textCheck = "true"
-				end
-				exec = "false";
-				if (@execEditor)
-					exec = "true"
-				end
-				ed = "";
-				if (@svgEditor)
-					ed = @svgEditor;
-				end
-								
-				cmd = "setDefaults('"+@svgFilename+","+@paperBorder+","+
-					@units+","+@exportSvgType+","+hiddenCheck+","+
-					outlineCheck+","+@outlineRGB+","+@outlineWidth+","+
-					linesCheck+","+@dissectRGB+","+@dissectWidth+","+
-					orphansCheck+","+@orphanRGB+","+@orphanWidth+","+
-					textCheck+","+@annotationRGB+","+@annotationWidth+","+
-					@annotationType+","+@annotationHeight+","+exec+","+ed+"')";
-				
-				@dlg.execute_script(cmd);
-			}
-			@dlg.set_on_close { @dlgOpen = false; }	
-			
-		else # Close if dlg already open
-			@dlgOpen = false; 
-			@dlg.close();
-		end
-	end
-	
-	
-	#######################################################
-	# Create export ok dialog box for SVG templates
-	#######################################################	
-	def export_ok_dialog()
-		
-		# Check that dlg not already opened
-		if not @okdlgOpen
-			@okdlgOpen = true
-			
-			# Get HTML file for dlg
-			html = File.dirname(__FILE__) + "/svgOkDialog.html";
-			if (html.length == 0)
-				return false;
-			end
-			
-			# Create new dlg
-			@okdlg = UI::WebDialog.new("SVG Export Ok", false, "FlightsOfIdeasOk", 400, 190, 150, 150, true);
-
-			# Set close callback function
-			@okdlg.add_action_callback("on_close") {|d,p| @okdlgOpen = false; d.close(); }
-			
-			# Set close callback function
-			@okdlg.add_action_callback("on_ok") {|d,p| @dlgOpen = false; d.close(); }	
-		
-			# Show the dlg
-			@okdlg.set_background_color("f3f0f0");
-			@okdlg.set_file(html, nil)
-			@okdlg.show{}
-			@okdlg.set_on_close { @okdlgOpen = false; }	
-			
-		else # Close if dlg already open
-			@okdlgOpen = false; 
-			@okdlg.close();
-		end
-	end		
 		
 ###########################################################	
 
@@ -557,7 +309,7 @@ class SvgExport
 		puts "###########"
 		#puts "Refpoint for the group is #{refPoint.to_a.join(",")}"
 		# Get parent transformations
-		transformMatrix = FlightsOfIdeasCommon.get_transform_product group[0]
+		transformMatrix = SvgExport.get_transform_product group[0]
 		
 		# Transfrom reference point
 		refPoint = transformMatrix*refPoint
@@ -576,7 +328,7 @@ class SvgExport
 		for i in 0...group.length
 			
 			# Get parent transforms
-			transformMatrix = FlightsOfIdeasCommon.get_transform_product group[i]
+			transformMatrix = SvgExport.get_transform_product group[i]
 			
 			if group[i].typename == "Face"
 				puts "Working on a face"
@@ -600,7 +352,7 @@ class SvgExport
 							@textEntities[txt][5] = i
 
 							# Set point for text in SVG
-							insertPoint = FlightsOfIdeasCommon.project_2d_position(transformMatrix.inverse*@textEntities[txt][1], transformMatrix, group[0])
+							insertPoint = SvgExport.project_2d_position(transformMatrix.inverse*@textEntities[txt][1], transformMatrix, group[0])
 							@textEntities[txt][6] = insertPoint[0].to_mm
 							@textEntities[txt][7] = insertPoint[1].to_mm
 						end
@@ -626,7 +378,7 @@ class SvgExport
 						
 						# Calculate 2D point
 						puts "V #{vertices[k].position.to_a}"
-						point = FlightsOfIdeasCommon.project_2d_point(vertices[k], transformMatrix, group[0])
+						point = SvgExport.project_2d_point(vertices[k], transformMatrix, group[0])
 						# Store point
 						point = point.to_a
 						puts "OPoin is #{point.join(",")}"
@@ -678,8 +430,8 @@ class SvgExport
 			elsif group[i].typename == "Edge" 
 				puts "Working on edge"
 				# Calculate 2D point
-				pointS = FlightsOfIdeasCommon.project_2d_point(group[i].start, transformMatrix, group[0])
-				pointE = FlightsOfIdeasCommon.project_2d_point(group[i].end, transformMatrix, group[0])
+				pointS = SvgExport.project_2d_point(group[i].start, transformMatrix, group[0])
+				pointE = SvgExport.project_2d_point(group[i].end, transformMatrix, group[0])
 							
 				# Store points		
 				@pointArrayGFXY[groupIndex][i] = Array.new(1)		
@@ -1023,8 +775,7 @@ class SvgExport
 		
 		@svgFile.close	
 		
-		self.export_ok_dialog();		
-		
+
 		# Execute SVG editor
 		if (@svgEditor)
 			if (@svgEditor.length > 0)
@@ -1034,4 +785,208 @@ class SvgExport
 		
 	end
 
+	#######################################################
+	# Parse routine for context menu and toolbar
+	#######################################################
+	def self.parse_for_face(suEntity, export_face)
+		if suEntity.typename == "Face"
+			if export_face.nil?
+				export_face = suEntity
+				return export_face
+			end
+		elsif suEntity.typename == "Group"
+			for i in 0...suEntity.entities.length
+				self.parse_for_face suEntity.entities[i], export_face
+			end
+		elsif suEntity.typename == "ComponentInstance"
+			for i in 0...suEntity.definition.entities.length
+				self.parse_for_face suEntity.definition.entities[i], export_face
+			end
+		end
+	end
+
+	#######################################################
+	# Parse routine for context menu and toolbar (make sure that one face is selected)
+	#######################################################
+	def self.contains_face(selection)
+		export_face = nil
+
+		for i in 0...selection.length
+			self.parse_for_face selection[i], export_face
+		end
+		!export_face.nil?
+
+	end
+
+	#######################################################
+	# Parse routine for context menu and toolbar
+	#######################################################
+	def self.parse_for_edge(suEntity, selection_edge)
+		if suEntity.typename == "Edge"
+			if selection_edge.nil?
+				selection_edge = suEntity
+				return selection_edge
+			end
+		elsif suEntity.typename == "Group"
+			for i in 0...suEntity.entities.length
+				self.parse_for_face suEntity.entities[i], selection_edge
+			end
+		elsif suEntity.typename == "ComponentInstance"
+			for i in 0...suEntity.definition.entities.length
+				self.parse_for_face suEntity.definition.entities[i], selection_edge
+			end
+		end
+	end
+
+	#######################################################
+	# Parse routine for context menu and toolbar (check if edges are selected)
+	#######################################################
+	def self.contains_edge(selection)
+		selection_edge = nil
+
+		for i in 0...selection.length
+			self.parse_for_edge selection[i], selection_edge
+		end
+		!selection_edge.nil?
+
+	end
+
+	#######################################################
+	# Parse parents of entity for transformations
+	#######################################################
+	def SvgExport.parse_parent_transforms(suEntity, transform_matrix)
+		# If a group then process transforms within
+		if suEntity.typename == "Group"
+			if suEntity.transformation
+
+				transform_matrix = transform_matrix * suEntity.transformation
+			end
+
+			# If a component definition holding group then process transforms within
+		elsif suEntity.typename == "ComponentDefinition"
+			if suEntity.group?
+				for instance in 0...suEntity.instances.length
+					parse_parent_transforms(suEntity.instances[instance], transform_matrix)
+				end
+			end
+
+			# If a component then process transforms within
+		elsif suEntity.typename == "ComponentInstance"
+			if (suEntity.transformation)
+				transform_matrix = transform_matrix * suEntity.transformation
+			end
+		end
+
+		# Recursive call to this function if parent exists (and is not root - active model)
+		if suEntity.parent && suEntity.parent != Sketchup.active_model
+
+			self.parse_parent_transforms suEntity.parent, transform_matrix
+
+		end
+
+
+	end
+
+	#######################################################
+	# Parse parents of entity for transformations
+	#######################################################
+	def self.get_transform_product(suEntity)
+		transform_matrix = Geom::Transformation.new
+
+		# Get parent transformations
+		if suEntity.parent && suEntity.parent != Sketchup.active_model
+
+
+			self.parse_parent_transforms(suEntity.parent, transform_matrix)
+
+		end
+		transform_matrix
+	end
+
+	#######################################################
+	# Find vector resolution for transforming to 2D
+	#######################################################
+	def self.calculate_2d_vector(vec1, vec2, norm)
+
+		# Check for non vectors
+		if vec1.x==0 and vec1.y==0 and vec1.z==0
+			vec3 = Geom::Vector3d.new(0, 0, 0)
+			return vec3
+		end
+		if vec2.x==0 and vec2.y==0 and vec2.z==0
+			vec3 = Geom::Vector3d.new(0, 0, 0)
+			return vec3
+		end
+		if norm.x==0 and norm.y==0 and norm.z==0
+			vec3 = Geom::Vector3d.new(0, 0, 0)
+			return vec3
+		end
+
+		# Find angle between vectors
+		angle = vec1.angle_between vec2
+		cross = vec1.cross vec2
+
+		if (not vec1.valid?) or (not vec2.valid?)
+			angle = 0
+		elsif vec1.samedirection? vec2
+			angle = 0
+		elsif vec1.parallel? vec2
+			angle = Math::PI
+		elsif not cross.samedirection? norm
+			angle = angle * -1
+		end
+
+		# Find length of line
+		magnitude = Math.sqrt((vec1.x*vec1.x)+(vec1.y*vec1.y)+(vec1.z*vec1.z))
+
+		# Plot along x-axis
+		vec3 = Geom::Vector3d.new(magnitude, 0, 0);
+
+		# Create rotation matrix for xy axes (around z)
+		rotation = Geom::Transformation.rotation Geom::Point3d.new(0, 0, 0), Geom::Vector3d.new(0, 0, 1), angle
+
+		# Apply matrix rotation
+		vec3 = rotation * vec3
+
+		return vec3
+	end
+
+	#######################################################
+	# Project 3D point as 2D on a face
+	#######################################################
+	def self.project_2d_point (vertex, t_matrix, face)
+		project_2d_position(vertex.position, t_matrix, face)
+	end
+
+	#######################################################
+	# Project 3D point as 2D on a face
+	#######################################################
+	def self.project_2d_position (position, t_matrix, face)
+		#DJE - this method is the key to getting nesting to work properly.
+		refPoint = face.loops[0].vertices[0].position
+		puts "Refpoints #{refPoint.to_a.join(",")}"
+		puts "Position #{position.to_a.join(",")}"
+		normal = face.normal
+		axes = normal.axes
+
+		# Apply Sketchup transformation
+		point = position
+		#	point = t_matrix * point
+
+		# Express as vectors
+		vec1 = Geom::Vector3d.new(point.x - refPoint.x, point.y - refPoint.y, point.z - refPoint.z)
+		puts "Vec1 #{vec1.to_a.join(",")}"
+		vec2 = normal.axes[1]
+		vec3 = SvgExport.calculate_2d_vector(vec1, vec2, normal)
+
+		# Calculate 2D point
+		point.x = round(refPoint.x + vec3.x)
+		point.y = round(refPoint.y + vec3.y)
+
+		return(point)
+	end
+
+	def self.round(val)
+		val.to_f.round(4)
+	end
 end
