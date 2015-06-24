@@ -19,217 +19,210 @@
 ###########################################################
 
 class FlightsOfIdeasCommon
-	
-	def initialize()
-		@@exportFace = nil					# The face to export
-		@@selectedEdge = nil					# The edge to export
-		@@transformMatrix
-	end
-	
-	#######################################################
-	# Parse routine for context menu and toolbar
-	#######################################################	
-	def self.parse_for_face(suEntity)
-		if suEntity.typename == "Face"
-			if (@@exportFace == nil)
-				@@exportFace = suEntity
-			end
-		elsif suEntity.typename == "Group"
-			for i in 0...suEntity.entities.length						
-				self.parse_for_face suEntity.entities[i]
-			end			
-		elsif suEntity.typename == "ComponentInstance"
-			for i in 0...suEntity.definition.entities.length						
-				self.parse_for_face suEntity.definition.entities[i]
-			end			
-		end		
-	end	
-	
-	#######################################################
-	# Parse routine for context menu and toolbar (make sure that one face is selected)
-	#######################################################	
-	def self.contains_face(selection)
-		@@exportFace = nil
-		
-		for i in 0...selection.length
-			self.parse_for_face selection[i]
-		end
-		if @@exportFace==nil
-			return false
-		end
-		return true
-	end
-	
-	#######################################################
-	# Parse routine for context menu and toolbar
-	#######################################################	
-	def self.parse_for_edge(suEntity)
-		if suEntity.typename == "Edge"
-			if (@@selectedEdge == nil)
-				@@selectedEdge = suEntity
-			end
-		elsif suEntity.typename == "Group"
-			for i in 0...suEntity.entities.length						
-				self.parse_for_face suEntity.entities[i]
-			end			
-		elsif suEntity.typename == "ComponentInstance"
-			for i in 0...suEntity.definition.entities.length						
-				self.parse_for_face suEntity.definition.entities[i]
-			end			
-		end		
-	end		
-	
-	#######################################################
-	# Parse routine for context menu and toolbar (check if edges are selected)
-	#######################################################	
-	def self.contains_edge(selection)
-		@@selectedEdge = nil
-		
-		for i in 0...selection.length
-			self.parse_for_edge selection[i]
-		end
-		if @@selectedEdge==nil
-			return false
-		end
-		return true
-	end	
 
-	#######################################################
-	# Parse parents of entity for transformations
-	#######################################################	
-	def FlightsOfIdeasCommon.parse_parent_transforms(suEntity)
-		# If a group then process transforms within
-		if suEntity.typename == "Group"
-			if (suEntity.transformation)
-				puts "Group transformation"
-				@@transformMatrix = @@transformMatrix * suEntity.transformation				
-			end
-		
-		# If a component definition holding group then process transforms within
-		elsif suEntity.typename == "ComponentDefinition"				
-			if (suEntity.group?)
-				for instance in 0...suEntity.instances.length
-					parse_parent_transforms(suEntity.instances[instance])
-				end
-			end
-		
-		# If a component then process transforms within
-		elsif suEntity.typename == "ComponentInstance"
-			if (suEntity.transformation)
-				@@transformMatrix = @@transformMatrix * suEntity.transformation				
-			end	
-		end
-		
-		# Recursive call to this function if parent exists (and is not root - active model)
-		if suEntity.parent
-			if suEntity.parent != Sketchup.active_model
-				self.parse_parent_transforms suEntity.parent
-			end
-		end
-		
-		
-	end
-	
-	#######################################################
-	# Parse parents of entity for transformations
-	#######################################################	
-	def self.get_transform_product(suEntity)
-		@@transformMatrix = Geom::Transformation.new	
-			
-		# Get parent transformations
-		if suEntity.parent
-			if suEntity.parent != Sketchup.active_model
-				puts "Looking at the parent for the transformation"
-				self.parse_parent_transforms(suEntity.parent)
-			end
-		end	
-		
-		return @@transformMatrix		
-	end	
 
-	#######################################################
-	# Find vector resolution for transforming to 2D
-	#######################################################
-	def self.calculate_2d_vector(vec1, vec2, norm)
-					
-		# Check for non vectors
-		if vec1.x==0 and vec1.y==0 and vec1.z==0
-			vec3 = Geom::Vector3d.new(0,0,0)
-			return vec3
-		end
-		if vec2.x==0 and vec2.y==0 and vec2.z==0
-			vec3 = Geom::Vector3d.new(0,0,0)
-			return vec3
-		end
-		if norm.x==0 and norm.y==0 and norm.z==0
-			vec3 = Geom::Vector3d.new(0,0,0)
-			return vec3
-		end
-					
-		# Find angle between vectors
-		angle = vec1.angle_between vec2
-		cross = vec1.cross vec2
+  #######################################################
+  # Parse routine for context menu and toolbar
+  #######################################################
+  def self.parse_for_face(suEntity, export_face)
+    if suEntity.typename == "Face"
+      if export_face.nil?
+        export_face = suEntity
+        return export_face
+      end
+    elsif suEntity.typename == "Group"
+      for i in 0...suEntity.entities.length
+        self.parse_for_face suEntity.entities[i], export_face
+      end
+    elsif suEntity.typename == "ComponentInstance"
+      for i in 0...suEntity.definition.entities.length
+        self.parse_for_face suEntity.definition.entities[i], export_face
+      end
+    end
+  end
 
-		if (not vec1.valid?) or (not vec2.valid?)
-			angle = 0
-		elsif vec1.samedirection? vec2
-			angle = 0
-		elsif vec1.parallel? vec2
-			angle = Math::PI
-		elsif not cross.samedirection? norm
-			angle = angle * -1
-		end
-						
-		# Find length of line
-		magnitude = Math.sqrt((vec1.x*vec1.x)+(vec1.y*vec1.y)+(vec1.z*vec1.z))
-						
-		# Plot along x-axis
-		vec3 = Geom::Vector3d.new(magnitude,0,0);
+  #######################################################
+  # Parse routine for context menu and toolbar (make sure that one face is selected)
+  #######################################################
+  def self.contains_face(selection)
+    export_face = nil
 
-		# Create rotation matrix for xy axes (around z)
-		rotation = Geom::Transformation.rotation Geom::Point3d.new(0,0,0), Geom::Vector3d.new(0,0,1), angle
-						
-		# Apply matrix rotation
-		vec3 = rotation * vec3
+    for i in 0...selection.length
+      self.parse_for_face selection[i], export_face
+    end
+    !export_face.nil?
 
-		return vec3		
-	end
-	
-	#######################################################
-	# Project 3D point as 2D on a face
-	#######################################################	
-	def self.project_2d_point (vertex, t_matrix, face)
-		project_2d_position(vertex.position, t_matrix, face)
-	end	
-	
-	#######################################################
-	# Project 3D point as 2D on a face
-	#######################################################	
-	def self.project_2d_position (position, t_matrix, face)
-		#DJE - this method is the key to getting nesting to work properly.
-		refPoint = face.loops[0].vertices[0].position
-		puts "Refpoints #{refPoint.to_a.join(",")}"
-		puts "Position #{position.to_a.join(",")}"
-		normal = face.normal
-		axes = normal.axes		
-		
-		# Apply Sketchup transformation
-		point = position
-	#	point = t_matrix * point
+  end
 
-		# Express as vectors
-		vec1 = Geom::Vector3d.new(point.x - refPoint.x, point.y - refPoint.y, point.z - refPoint.z)
-		puts "Vec1 #{vec1.to_a.join(",")}"
-		vec2 = normal.axes[1]
-		vec3 = FlightsOfIdeasCommon.calculate_2d_vector(vec1, vec2, normal)
+  #######################################################
+  # Parse routine for context menu and toolbar
+  #######################################################
+  def self.parse_for_edge(suEntity, selection_edge)
+    if suEntity.typename == "Edge"
+      if selection_edge.nil?
+        selection_edge = suEntity
+        return selection_edge
+      end
+    elsif suEntity.typename == "Group"
+      for i in 0...suEntity.entities.length
+        self.parse_for_face suEntity.entities[i], selection_edge
+      end
+    elsif suEntity.typename == "ComponentInstance"
+      for i in 0...suEntity.definition.entities.length
+        self.parse_for_face suEntity.definition.entities[i], selection_edge
+      end
+    end
+  end
 
-		# Calculate 2D point
-		point.x = round(refPoint.x + vec3.x)
-		point.y = round(refPoint.y + vec3.y)
-		
-		return(point)
-	end
-	def self.round(val)
-		val.to_f.round(4)
-	end
+  #######################################################
+  # Parse routine for context menu and toolbar (check if edges are selected)
+  #######################################################
+  def self.contains_edge(selection)
+    selection_edge = nil
+
+    for i in 0...selection.length
+      self.parse_for_edge selection[i], selection_edge
+    end
+    !selection_edge.nil?
+
+  end
+
+  #######################################################
+  # Parse parents of entity for transformations
+  #######################################################
+  def FlightsOfIdeasCommon.parse_parent_transforms(suEntity, transform_matrix)
+    # If a group then process transforms within
+    if suEntity.typename == "Group"
+      if suEntity.transformation
+
+        transform_matrix = transform_matrix * suEntity.transformation
+      end
+
+      # If a component definition holding group then process transforms within
+    elsif suEntity.typename == "ComponentDefinition"
+      if suEntity.group?
+        for instance in 0...suEntity.instances.length
+          parse_parent_transforms(suEntity.instances[instance], transform_matrix)
+        end
+      end
+
+      # If a component then process transforms within
+    elsif suEntity.typename == "ComponentInstance"
+      if (suEntity.transformation)
+        transform_matrix = transform_matrix * suEntity.transformation
+      end
+    end
+
+    # Recursive call to this function if parent exists (and is not root - active model)
+    if suEntity.parent && suEntity.parent != Sketchup.active_model
+
+      self.parse_parent_transforms suEntity.parent, transform_matrix
+
+    end
+
+
+  end
+
+  #######################################################
+  # Parse parents of entity for transformations
+  #######################################################
+  def self.get_transform_product(suEntity)
+    transform_matrix = Geom::Transformation.new
+
+    # Get parent transformations
+    if suEntity.parent && suEntity.parent != Sketchup.active_model
+
+
+      self.parse_parent_transforms(suEntity.parent, transform_matrix)
+
+    end
+     transform_matrix
+  end
+
+  #######################################################
+  # Find vector resolution for transforming to 2D
+  #######################################################
+  def self.calculate_2d_vector(vec1, vec2, norm)
+
+    # Check for non vectors
+    if vec1.x==0 and vec1.y==0 and vec1.z==0
+      vec3 = Geom::Vector3d.new(0, 0, 0)
+      return vec3
+    end
+    if vec2.x==0 and vec2.y==0 and vec2.z==0
+      vec3 = Geom::Vector3d.new(0, 0, 0)
+      return vec3
+    end
+    if norm.x==0 and norm.y==0 and norm.z==0
+      vec3 = Geom::Vector3d.new(0, 0, 0)
+      return vec3
+    end
+
+    # Find angle between vectors
+    angle = vec1.angle_between vec2
+    cross = vec1.cross vec2
+
+    if (not vec1.valid?) or (not vec2.valid?)
+      angle = 0
+    elsif vec1.samedirection? vec2
+      angle = 0
+    elsif vec1.parallel? vec2
+      angle = Math::PI
+    elsif not cross.samedirection? norm
+      angle = angle * -1
+    end
+
+    # Find length of line
+    magnitude = Math.sqrt((vec1.x*vec1.x)+(vec1.y*vec1.y)+(vec1.z*vec1.z))
+
+    # Plot along x-axis
+    vec3 = Geom::Vector3d.new(magnitude, 0, 0);
+
+    # Create rotation matrix for xy axes (around z)
+    rotation = Geom::Transformation.rotation Geom::Point3d.new(0, 0, 0), Geom::Vector3d.new(0, 0, 1), angle
+
+    # Apply matrix rotation
+    vec3 = rotation * vec3
+
+    return vec3
+  end
+
+  #######################################################
+  # Project 3D point as 2D on a face
+  #######################################################
+  def self.project_2d_point (vertex, t_matrix, face)
+    project_2d_position(vertex.position, t_matrix, face)
+  end
+
+  #######################################################
+  # Project 3D point as 2D on a face
+  #######################################################
+  def self.project_2d_position (position, t_matrix, face)
+    #DJE - this method is the key to getting nesting to work properly.
+    refPoint = face.loops[0].vertices[0].position
+    puts "Refpoints #{refPoint.to_a.join(",")}"
+    puts "Position #{position.to_a.join(",")}"
+    normal = face.normal
+    axes = normal.axes
+
+    # Apply Sketchup transformation
+    point = position
+    #	point = t_matrix * point
+
+    # Express as vectors
+    vec1 = Geom::Vector3d.new(point.x - refPoint.x, point.y - refPoint.y, point.z - refPoint.z)
+    puts "Vec1 #{vec1.to_a.join(",")}"
+    vec2 = normal.axes[1]
+    vec3 = FlightsOfIdeasCommon.calculate_2d_vector(vec1, vec2, normal)
+
+    # Calculate 2D point
+    point.x = round(refPoint.x + vec3.x)
+    point.y = round(refPoint.y + vec3.y)
+
+    return(point)
+  end
+
+  def self.round(val)
+    val.to_f.round(4)
+  end
 end
