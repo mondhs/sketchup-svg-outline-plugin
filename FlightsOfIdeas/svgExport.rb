@@ -56,7 +56,7 @@ class SvgExport
     # Border inside of SVG document
     @paperBorder = "10"
     # Units to use in SVG file
-    @units = "inches" #mm
+    @units = "in" #mm
     # Whether to export hidden lines
     @exportHiddenLines = false
     # Whether to export outlines
