@@ -1,6 +1,3 @@
-require 'sketchup.rb'
-require 'extensions.rb'
-require 'LangHandler.rb'
 load 'FlightsOfIdeas/svgExport.rb'
 
 ###########################################################

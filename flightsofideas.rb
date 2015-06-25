@@ -31,11 +31,11 @@ end
 FLIGHTS_OF_IDEAS_DIR = "plugins/#{base_dir}"
 if FLIGHTS_OF_IDEAS_DEV
 
-$uStrings = LanguageHandler.new("FlightsOfIdeasSVG")
-flightsOfIdeasExtensionSVG = SketchupExtension.new $uStrings.GetString("FlightsOfIdeasSVG"), "#{base_dir}/svgExportTools.rb"
-flightsOfIdeasExtensionSVG.description=$uStrings.GetString("These tools allow the creation of SVG files using object faces.")
-flightsOfIdeasExtensionSVG.version = "0.99999.b1"
-Sketchup.register_extension flightsOfIdeasExtensionSVG, true
+  $uStrings = LanguageHandler.new("FlightsOfIdeasSVG")
+  flightsOfIdeasExtensionSVG = SketchupExtension.new $uStrings.GetString("FlightsOfIdeasSVG"), "#{base_dir}/svgExportTools.rb"
+  flightsOfIdeasExtensionSVG.description=$uStrings.GetString("These tools allow the creation of SVG files using object faces.")
+  flightsOfIdeasExtensionSVG.version = "0.99999.b1"
+  Sketchup.register_extension flightsOfIdeasExtensionSVG, true
 
   $uStrings = LanguageHandler.new("FlightsOfIdeasReloadTool")
   flightsOfIdeasReloadTools = SketchupExtension.new $uStrings.GetString("FlightsOfIdeasReloadTool"), "#{base_dir}/reload_tool.rb"
@@ -43,4 +43,3 @@ Sketchup.register_extension flightsOfIdeasExtensionSVG, true
   flightsOfIdeasReloadTools.version = "0.99999.b1"
   Sketchup.register_extension flightsOfIdeasReloadTools, true
 end
-###########################################################
