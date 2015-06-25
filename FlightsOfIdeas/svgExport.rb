@@ -35,32 +35,36 @@ class SvgExport
     # Global transform for points (initialise as identity)
     transformMatrix = Geom::Transformation.new
     # Min and Max XY of each face in mm
-    @minx = Array.new; @miny = Array.new; @maxx = Array.new; @maxy = Array.new
+    @minx = Array.new
+    @miny = Array.new
+    @maxx = Array.new
+    @maxy = Array.new
     # Array for holding 2D projected points in mm of faces
     @pointArrayGFXY = Array.new
     # Groups of co-planar faces that are joined
-    @faceGroups = Array.new;
-    # Groups of co-planar faces that are joined
-    @pointArrayGFXY = Array.new;
+    @faceGroups = Array.new
+        # Groups of co-planar faces that are joined
+    @pointArrayGFXY = Array.new
     # Whether the current face has been selected by the user
     @faceInSelection = false
 
     # Get dictionary preferences (create if none)
     @prefs = true
     # File name to export SVG
-    @svgFilename = "flightsOfIdeas.svg"
+    user_name = ENV['USERNAME']
+    @svgFilename = "C:\Users\#{user_name}\Desktop\Sample.svg"
     # Border inside of SVG document
     @paperBorder = "10"
     # Units to use in SVG file
-    @units = "in"
+    @units = "inches" #mm
     # Whether to export hidden lines
     @exportHiddenLines = false
     # Whether to export outlines
     @exportOutlines = true
     # Whether to export disecting lines (useful when laser etching)
-    @exportInternalLines = true
+    @exportInternalLines = false
     # Whether to export internal lines which are not part of a faces loops (useful when laser etching)
-    @exportOrphanLines = true
+    @exportOrphanLines = false
     # Whether to export SketchUp text annotations
     @exportAnnotations = false
     # The size of text annotations
@@ -94,7 +98,7 @@ class SvgExport
     cmd = UI::Command.new("Export to SVG File") {
       selection=Sketchup.active_model.selection
       if SvgExport.contains_face selection
-        self.create_svg();
+        self.create_svg()
       end
     }
     path = Sketchup.find_support_file "CreateSvg.png", "#{FLIGHTS_OF_IDEAS_DIR}/Images/"
@@ -143,7 +147,7 @@ class SvgExport
   def collect_text_entities (suEntity)
     if suEntity.typename == "Text"
       @textEntities.push(Array.new)
-      index = @textEntities.length-1;
+      index = @textEntities.length - 1
       @textEntities[index].push(suEntity.text)
       @textEntities[index].push(suEntity.point)
       @textEntities[index].push(suEntity.vector)
@@ -461,7 +465,7 @@ class SvgExport
     # Initialise 2D point storage
     @faceGroups=Array.new
 
-    selection=Sketchup.active_model.selection;
+    selection = Sketchup.active_model.selection
 
     # Grouped joined and colinear faces
     for i in 0...selection.length
@@ -520,9 +524,9 @@ class SvgExport
     border = @paperBorder.to_f
 
     # For each loop
-    height = 0;
-    pageX = 0;
-    pageY = 0;
+    height = 0
+    pageX = 0
+    pageY = 0
 
     for g in 0...@pointArrayGFXY.length
 
@@ -542,8 +546,8 @@ class SvgExport
               @textEntities[txt][6] = @textEntities[txt][6]* MM_TO_IN
               @textEntities[txt][7] = @textEntities[txt][7]* MM_TO_IN
             end
-            @textEntities[txt][6] = (@textEntities[txt][6]-@minx[g])+border;
-            @textEntities[txt][7] = ((@textEntities[txt][7]-@miny[g])+border+height);
+            @textEntities[txt][6] = (@textEntities[txt][6]-@minx[g])+border
+            @textEntities[txt][7] = ((@textEntities[txt][7]-@miny[g])+border+height)
           end
         end
 
@@ -559,8 +563,8 @@ class SvgExport
             end
 
             # Move points to reflect border and bounds
-            @pointArrayGFXY[g][f][i][j][0] = (@pointArrayGFXY[g][f][i][j][0] - @minx[g])+border;
-            @pointArrayGFXY[g][f][i][j][1] = (@pointArrayGFXY[g][f][i][j][1] - @miny[g])+border+height;
+            @pointArrayGFXY[g][f][i][j][0] = (@pointArrayGFXY[g][f][i][j][0] - @minx[g])+border
+            @pointArrayGFXY[g][f][i][j][1] = (@pointArrayGFXY[g][f][i][j][1] - @miny[g])+border+height
 
             # Record new page size for SVG
             if @pointArrayGFXY[g][f][i][j][0] > pageX
@@ -574,11 +578,11 @@ class SvgExport
       end
 
       # Recalculate
-      height = (@maxy[g]- @miny[g])+height+border;
+      height = (@maxy[g]- @miny[g])+height+border
     end
 
-    pageX = (pageX+border);
-    pageY = (pageY+border);
+    pageX = (pageX+border)
+    pageY = (pageY+border)
 
     # Write header to file
     @svgFile.write "<?xml version=\"1.0\" standalone=\"no\"?>\n"
@@ -609,7 +613,7 @@ class SvgExport
         # If a text entitiy references this face
         if (@textEntities[txt][3])
           if (@annotationType == "SVG")
-            lines = @textEntities[txt][0].split("\n");
+            lines = @textEntities[txt][0].split("\n")
             @svgFile.write "<text style=\"fill:none\" stroke=\"#"+@annotationRGB+"\" stroke-width=\""+@annotationWidth.to_s+"\" x=\""+@textEntities[txt][6].to_s+"\" y=\""+@textEntities[txt][7].to_s+"\">"
             for line in 0...lines.length
               lines[line] = lines[line].sub(/\&/) { |s| s = "&amp;" }
@@ -620,14 +624,14 @@ class SvgExport
               if line > 0
                 @svgFile.write "x=\""+@textEntities[txt][6].to_s+"\""
               end
-              @svgFile.write ">"+lines[line]+"</tspan>";
+              @svgFile.write ">"+lines[line]+"</tspan>"
             end
             @svgFile.write "\n</text>\n"
           else
             svg = LaserScript.getSvgText(@textEntities[txt][0])
             scale = @annotationHeight.to_f/LaserScript.getHeight
             svg = "  <g transform=\"translate("+@textEntities[txt][6].to_s+","+@textEntities[txt][7].to_s+") scale("+scale.to_s+")\" fill=\"none\" stroke=\"#"+@annotationRGB+"\" stroke-width=\""+(@annotationWidth.to_f/scale).to_s+"\" stroke-miterlimit=\"4\" stroke-dasharray=\"none\" stroke-linejoin=\"round\" stroke-linecap=\"round\">\n"+svg
-            svg = svg+"  </g>\n";
+            svg = svg+"  </g>\n"
             @svgFile.write svg
           end
         end
@@ -673,7 +677,7 @@ class SvgExport
             end
           end
           @svgFile.write "  </g>\n"
-          faceNumber = faceNumber+1;
+          faceNumber = faceNumber+1
         end
       end
     else
@@ -702,7 +706,7 @@ class SvgExport
           end
           @svgFile.write "\"\n"
           @svgFile.write "  />\n"
-          faceNumber = faceNumber+1;
+          faceNumber = faceNumber+1
         end
       end
 
@@ -732,7 +736,7 @@ class SvgExport
             end
             @svgFile.write "\"\n"
             @svgFile.write "  />\n"
-            faceNumber = faceNumber+1;
+            faceNumber = faceNumber+1
           end
         end
       end
@@ -763,7 +767,7 @@ class SvgExport
             end
             @svgFile.write "\"\n"
             @svgFile.write "  />\n"
-            faceNumber = faceNumber+1;
+            faceNumber = faceNumber+1
           end
         end
       end
@@ -773,7 +777,7 @@ class SvgExport
     @svgFile.write "</svg>\n"
 
     @svgFile.close
-
+    puts "Wrote out  #{@svgFilename}"
 
     # Execute SVG editor
     if (@svgEditor)
@@ -939,7 +943,7 @@ class SvgExport
     magnitude = Math.sqrt((vec1.x*vec1.x)+(vec1.y*vec1.y)+(vec1.z*vec1.z))
 
     # Plot along x-axis
-    vec3 = Geom::Vector3d.new(magnitude, 0, 0);
+    vec3 = Geom::Vector3d.new(magnitude, 0, 0)
 
     # Create rotation matrix for xy axes (around z)
     rotation = Geom::Transformation.rotation Geom::Point3d.new(0, 0, 0), Geom::Vector3d.new(0, 0, 1), angle
