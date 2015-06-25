@@ -43,7 +43,7 @@ class SvgExport
     @pointArrayGFXY = Array.new
     # Groups of co-planar faces that are joined
     @faceGroups = Array.new
-        # Groups of co-planar faces that are joined
+    # Groups of co-planar faces that are joined
     @pointArrayGFXY = Array.new
     # Whether the current face has been selected by the user
     @faceInSelection = false
@@ -51,8 +51,8 @@ class SvgExport
     # Get dictionary preferences (create if none)
     @prefs = true
     # File name to export SVG
-    user_name = ENV['USERNAME']
-    @svgFilename = "C:\Users\#{user_name}\Desktop\Sample.svg"
+
+    @svgFilename = "C:/Users/delmendo/Desktop/Sample.svg"
     # Border inside of SVG document
     @paperBorder = "10"
     # Units to use in SVG file
@@ -96,9 +96,14 @@ class SvgExport
     toolbar = UI::Toolbar.new "FlightsOfIdeas"
 
     cmd = UI::Command.new("Export to SVG File") {
+      puts "Triggering export"
       selection=Sketchup.active_model.selection
-      if SvgExport.contains_face selection
-        self.create_svg()
+      puts "Selection is #{selection}"
+      if SvgExport.contains_face?(selection)
+        svg_export = SvgExport.new
+        svg_export.create_svg()
+      else
+        puts "Sorry nothing sleected."
       end
     }
     path = Sketchup.find_support_file "CreateSvg.png", "#{FLIGHTS_OF_IDEAS_DIR}/Images/"
@@ -454,7 +459,7 @@ class SvgExport
   #######################################################
   # Create SVG by parsing Sketchup selected entities
   #######################################################
-  def parse_selection()
+  def parse_selection
 
     @textEntities=Array.new
     entities = Sketchup.active_model.entities
@@ -792,33 +797,35 @@ class SvgExport
   # Parse routine for context menu and toolbar
   #######################################################
   def self.parse_for_face(suEntity, export_face)
+    puts "Parsing for face"
     if suEntity.typename == "Face"
       if export_face.nil?
         export_face = suEntity
-        return export_face
+
       end
     elsif suEntity.typename == "Group"
       for i in 0...suEntity.entities.length
-        self.parse_for_face suEntity.entities[i], export_face
+        export_face = self.parse_for_face suEntity.entities[i], export_face
       end
     elsif suEntity.typename == "ComponentInstance"
       for i in 0...suEntity.definition.entities.length
-        self.parse_for_face suEntity.definition.entities[i], export_face
+        export_face = self.parse_for_face suEntity.definition.entities[i], export_face
       end
     end
+    export_face
   end
 
   #######################################################
   # Parse routine for context menu and toolbar (make sure that one face is selected)
   #######################################################
-  def self.contains_face(selection)
+  def self.contains_face?(selection)
     export_face = nil
 
     for i in 0...selection.length
-      self.parse_for_face selection[i], export_face
+      return true unless self.parse_for_face(selection[i], export_face).nil?
     end
-    !export_face.nil?
 
+    false
   end
 
   #######################################################
@@ -828,29 +835,30 @@ class SvgExport
     if suEntity.typename == "Edge"
       if selection_edge.nil?
         selection_edge = suEntity
-        return selection_edge
+
       end
     elsif suEntity.typename == "Group"
       for i in 0...suEntity.entities.length
-        self.parse_for_face suEntity.entities[i], selection_edge
+        selection_edge = self.parse_for_face suEntity.entities[i], selection_edge
       end
     elsif suEntity.typename == "ComponentInstance"
       for i in 0...suEntity.definition.entities.length
-        self.parse_for_face suEntity.definition.entities[i], selection_edge
+        selection_edge = self.parse_for_face suEntity.definition.entities[i], selection_edge
       end
     end
+    selection_edge
   end
 
   #######################################################
   # Parse routine for context menu and toolbar (check if edges are selected)
   #######################################################
-  def self.contains_edge(selection)
+  def self.contains_edge?(selection)
     selection_edge = nil
 
     for i in 0...selection.length
-      self.parse_for_edge selection[i], selection_edge
+      return true unless self.parse_for_edge(selection[i], selection_edge).nil?
     end
-    !selection_edge.nil?
+    false
 
   end
 
@@ -869,7 +877,7 @@ class SvgExport
     elsif suEntity.typename == "ComponentDefinition"
       if suEntity.group?
         for instance in 0...suEntity.instances.length
-          parse_parent_transforms(suEntity.instances[instance], transform_matrix)
+          transform_matrix = parse_parent_transforms(suEntity.instances[instance], transform_matrix)
         end
       end
 
@@ -883,11 +891,11 @@ class SvgExport
     # Recursive call to this function if parent exists (and is not root - active model)
     if suEntity.parent && suEntity.parent != Sketchup.active_model
 
-      self.parse_parent_transforms suEntity.parent, transform_matrix
+      transform_matrix = self.parse_parent_transforms suEntity.parent, transform_matrix
 
     end
 
-
+    transform_matrix
   end
 
   #######################################################
@@ -900,7 +908,7 @@ class SvgExport
     if suEntity.parent && suEntity.parent != Sketchup.active_model
 
 
-      self.parse_parent_transforms(suEntity.parent, transform_matrix)
+      transform_matrix = self.parse_parent_transforms(suEntity.parent, transform_matrix)
 
     end
     transform_matrix
