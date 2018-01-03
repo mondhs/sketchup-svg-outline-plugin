@@ -25,31 +25,31 @@ class SvgExport
 	MM_TO_IN ||= 0.0393700787
 	#######################################################
 	# New Template
-	#######################################################	
-	def initialize()					
-		# The dialog object		
-		@dlg = nil	
+	#######################################################
+	def initialize()
+		# The dialog object
+		@dlg = nil
 		# Whether the ok dlg is currently open
-		@dlgOpen = false	
+		@dlgOpen = false
 		# The ok dialog object
-		@okdlg = nil	
+		@okdlg = nil
 		# Whether the dlg is currently open
-		@okdlgOpen = false		
-		# The face to make into an SVG file		
-		@exportFace = nil	
+		@okdlgOpen = false
+		# The face to make into an SVG file
+		@exportFace = nil
 		# The actual SVG file for writing
-		@svgFile = nil		
+		@svgFile = nil
 		# Global transform for points (initialise as identity)
-		transformMatrix = Geom::Transformation.new 
+		transformMatrix = Geom::Transformation.new
 		# Min and Max XY of each face in mm
-		@minx = Array.new; @miny = Array.new; @maxx = Array.new; @maxy = Array.new		
+		@minx = Array.new; @miny = Array.new; @maxx = Array.new; @maxy = Array.new
 		# Array for holding 2D projected points in mm of faces
-		@pointArrayGFXY = Array.new		
+		@pointArrayGFXY = Array.new
 		# Groups of co-planar faces that are joined
 		@faceGroups = Array.new;
 		# Groups of co-planar faces that are joined
-		@pointArrayGFXY = Array.new;		
-		# Whether the current face has been selected by the user		
+		@pointArrayGFXY = Array.new;
+		# Whether the current face has been selected by the user
 		@faceInSelection = false
 		
 		# Get dictionary preferences (create if none)
@@ -57,25 +57,25 @@ class SvgExport
 		# File name to export SVG
 		@svgFilename = Sketchup.active_model.get_attribute "foi_svg_export", "svgFilename", "flightsOfIdeas.svg"
 		# Border inside of SVG document
-		@paperBorder = Sketchup.active_model.get_attribute "foi_svg_export", "paperBorder", "10"	
+		@paperBorder = Sketchup.active_model.get_attribute "foi_svg_export", "paperBorder", "10"
 		# Units to use in SVG file
-		@units = Sketchup.active_model.get_attribute "foi_svg_export", "units", "in"
+		@units = Sketchup.active_model.get_attribute "foi_svg_export", "units", "mm"
 		# Whether to export hidden lines
 		@exportHiddenLines = Sketchup.active_model.get_attribute "foi_svg_export", "exportHidden", false
 		# Whether to export outlines
-		@exportOutlines = Sketchup.active_model.get_attribute "foi_svg_export", "exportOutlines", true		
+		@exportOutlines = Sketchup.active_model.get_attribute "foi_svg_export", "exportOutlines", true
 		# Whether to export disecting lines (useful when laser etching)
-		@exportInternalLines = Sketchup.active_model.get_attribute "foi_svg_export", "exportEtch", true		
+		@exportInternalLines = Sketchup.active_model.get_attribute "foi_svg_export", "exportEtch", true
 		# Whether to export internal lines which are not part of a faces loops (useful when laser etching)
-		@exportOrphanLines = Sketchup.active_model.get_attribute "foi_svg_export", "exportOrphans", true	
+		@exportOrphanLines = Sketchup.active_model.get_attribute "foi_svg_export", "exportOrphans", true
 		# Whether to export SketchUp text annotations
 		@exportAnnotations = Sketchup.active_model.get_attribute "foi_svg_export", "exportAnnotations", false
 		# The size of text annotations
-		@annotationHeight = Sketchup.active_model.get_attribute "foi_svg_export", "annotationHeight", "10"	
+		@annotationHeight = Sketchup.active_model.get_attribute "foi_svg_export", "annotationHeight", "10"
 		# The type of text exported (SVG or laser script)
 		@annotationType = Sketchup.active_model.get_attribute "foi_svg_export", "annotationType", "SVG"
 		# Whether to export as path or lines to SVG file
-		@exportSvgType = Sketchup.active_model.get_attribute "foi_svg_export", "exportSVG", "paths"	
+		@exportSvgType = Sketchup.active_model.get_attribute "foi_svg_export", "exportSVG", "paths"
 		# Colours for SVG file
 		@outlineRGB = Sketchup.active_model.get_attribute "foi_svg_export", "outlineRGB", "0000FF"
 		@dissectRGB = Sketchup.active_model.get_attribute "foi_svg_export", "dissectRGB", "FF0000"
@@ -93,35 +93,35 @@ class SvgExport
 
 	#######################################################
 	# Create UI context menu for creating SVG templates
-	#######################################################	
+	#######################################################
 	def template_context_menu()
 		UI.add_context_menu_handler { |menu|
 			selection=Sketchup.active_model.selection
-			if FlightsOfIdeasCommon.contains_face selection 
-				menu.add_separator				
-				item = menu.add_item("Export to SVG file") { self.preferences_dialog(); }				
+			if FlightsOfIdeasCommon.contains_face selection
+				menu.add_separator
+				item = menu.add_item("Export to SVG file") { self.preferences_dialog(); }
 			end
 		}
 	end
 	
 	#######################################################
 	# Create UI toolbar for creating SVG templates
-	#######################################################	
+	#######################################################
 	def template_toolbar()
 		toolbar = UI::Toolbar.new "FlightsOfIdeas"
 
-		cmd = UI::Command.new("Export to SVG File") { 
+		cmd = UI::Command.new("Export to SVG File") {
 			selection=Sketchup.active_model.selection
-			if FlightsOfIdeasCommon.contains_face selection 
+			if FlightsOfIdeasCommon.contains_face selection
 				self.preferences_dialog();
 			end
-		}		
+		}
 		path = Sketchup.find_support_file "CreateSvg.png", "#{FLIGHTS_OF_IDEAS_DIR}/Images/"
 		cmd.small_icon = path
 		cmd.large_icon = path
 		cmd.tooltip = "Create 2D SVG file from selected face(s)"
 		cmd.status_bar_text = "The 2D format is used for simple CNC milling, laser cutting, documentation, and layout"
-		cmd.menu_text = "Create SVG file"				
+		cmd.menu_text = "Create SVG file"
 		toolbar = toolbar.add_item cmd
 		toolbar.show
 	end
@@ -130,42 +130,49 @@ class SvgExport
 
 	#######################################################
 	# Create preferences dialog box for SVG templates
-	#######################################################	
+	#######################################################
 	def preferences_dialog()
 		
 		# Check that dlg not already opened
 		if not @dlgOpen
 			@dlgOpen = true
-			
+
 			# Get HTML file for dlg
 			html = File.dirname(__FILE__) + "/svgExportDialog.html";
 			if (html.length == 0)
 				return false;
 			end
-			
+
 			# Create new dlg
-			@dlg = UI::WebDialog.new "SVG Export Preferences", true
-			@dlg.min_height=600;
-			@dlg.min_width=1024;
+			@dlg = UI::HtmlDialog.new({
+				:min_height => 600,
+				:min_width =>1024,
+				})
 
 			# Set close callback function
-			@dlg.add_action_callback("on_close") {|d,p| @dlgOpen = false; d.close(); }
-			
+			@dlg.add_action_callback("on_close") {|action_context,p|
+        p "onClose"
+				@dlgOpen = false;
+				@dlg.close();
+			}
+
+			@dlg.add_action_callback("say") { |action_context, param1, param2|
+  			puts "JavaScript said #{param1} and #{param2}"
+			}
 			# Set close callback function
-			@dlg.add_action_callback("on_ok") {|d,p| 
-				
+			@dlg.add_action_callback("on_ok") {|action_context,p|
 				# Get arguments
-				args = p.split(','); 
+				args = p.split(',');
 				@svgFilename=args[0]; @paperBorder = args[1]; @units=args[2];
-				@exportSvgType = args[3];				
+				@exportSvgType = args[3];
 				@exportHiddenLines = false;
 				if args[4] == "true"
 					@exportHiddenLines = true;
-				end					
+				end
 				@exportOutlines = false;
 				if args[5] == "true"
 					@exportOutlines = true;
-				end					
+				end
 				@outlineRGB = args[6];
 				@outlineWidth = args[7];
 				@exportInternalLines = false;
@@ -183,27 +190,27 @@ class SvgExport
 				@exportAnnotations = false;
 				if args[14] == "true"
 					@exportAnnotations = true;
-				end			
+				end
 				@annotationRGB = args[15];
 				@annotationWidth = args[16];
 				@annotationType = args[17];
-				@annotationHeight = args[18];							
+				@annotationHeight = args[18];
 				@execEditor = false;
 				if args[19] == "true"
 					@execEditor = true;
 					@svgEditor = args[20];
 				end
-				
+
 				# Store preferences
 				Sketchup.active_model.attribute_dictionary "foi_svg_export", true
 				Sketchup.active_model.set_attribute "foi_svg_export", "svgFilename", @svgFilename
-				Sketchup.active_model.set_attribute "foi_svg_export", "paperBorder", @paperBorder					
-				Sketchup.active_model.set_attribute "foi_svg_export", "units", @units		
+				Sketchup.active_model.set_attribute "foi_svg_export", "paperBorder", @paperBorder
+				Sketchup.active_model.set_attribute "foi_svg_export", "units", @units
 				Sketchup.active_model.set_attribute "foi_svg_export", "exportHidden", @exportHiddenLines
-				Sketchup.active_model.set_attribute "foi_svg_export", "exportOutlines", @exportOutlines				
-				Sketchup.active_model.set_attribute "foi_svg_export", "exportEtch", @exportInternalLines	
-				Sketchup.active_model.set_attribute "foi_svg_export", "exportOrphans", @exportOrphanLines										
-				Sketchup.active_model.set_attribute "foi_svg_export", "exportSVG", @exportSvgType						
+				Sketchup.active_model.set_attribute "foi_svg_export", "exportOutlines", @exportOutlines
+				Sketchup.active_model.set_attribute "foi_svg_export", "exportEtch", @exportInternalLines
+				Sketchup.active_model.set_attribute "foi_svg_export", "exportOrphans", @exportOrphanLines
+				Sketchup.active_model.set_attribute "foi_svg_export", "exportSVG", @exportSvgType
 				Sketchup.active_model.set_attribute "foi_svg_export", "exportAnnotations", @exportAnnotations
 				Sketchup.active_model.set_attribute "foi_svg_export", "annotationType", @annotationType
 				Sketchup.active_model.set_attribute "foi_svg_export", "annotationHeight", @annotationHeight
@@ -212,77 +219,78 @@ class SvgExport
 				Sketchup.active_model.set_attribute "foi_svg_export", "orphanRGB", @orphanRGB
 				Sketchup.active_model.set_attribute "foi_svg_export", "annotationRGB", @annotationRGB
 				Sketchup.active_model.set_attribute "foi_svg_export", "execEditor", @execEditor
-				if (@execEditor)				
-					if (@svgEditor.length > 0)	
+				if (@execEditor)
+					if (@svgEditor.length > 0)
 						Sketchup.active_model.set_attribute "foi_svg_export", "svgEditor", @svgEditor;
 					end
 				end
-				
+
 				# Create the SVG file
 				create_svg;
-				
+
 				# Close dialog
-				@dlgOpen = false; d.close(); 				
-			}			
-					
+				@dlgOpen = false; @dlg.close();
+			}
+
 			# Set save as callback function
-			@dlg.add_action_callback("on_file_save") {|d,p| 							
+			@dlg.add_action_callback("on_file_save") {|d,p|
 				name = p.split('/')
 				name = name[name.length-1]
-						
+
 				output_filename = UI.savepanel("Export to SVG", "", name);
-				
+
+        p "output_filename: " + output_filename
 				# Tidy filename path
 				if (output_filename)
 					name = output_filename.split('\\')
 					@svgFilename = name[0]
 					for i in 1...name.length
 						@svgFilename  = @svgFilename+'/'+name[i]
-					end					
+					end
 				end
-				
-				cmd = "setFilename('"+@svgFilename+"')";				
-				d.execute_script(cmd);
-			}			
-			
+
+				cmd = "setFilename('"+@svgFilename+"')";
+				@dlg.execute_script(cmd);
+			}
+
 			# Set help callback
 			@dlg.add_action_callback("on_help") {|d,p|
 				UI.openURL("http://extensions.sketchup.com/en/content/svg-outline-plugin")
 			}
-			
+
 			# Set SVG editor configure callback function
-			@dlg.add_action_callback("on_svg_editor_configure") {|d,p| 							
+			@dlg.add_action_callback("on_svg_editor_configure") {|d,p|
 				name = p.split('/')
 				name = name[name.length-1]
-						
-				@svgEditor = UI.openpanel "Select your SVG editor", "", "*"						
-				
-				# Tidy filename path				
+
+				@svgEditor = UI.openpanel "Select your SVG editor", "", "*"
+
+				# Tidy filename path
 				if (@svgEditor)
 					name = @svgEditor.split('\\')
 					@svgEditor = name[0]
-					for i in 1...name.length										
+					for i in 1...name.length
 						@svgEditor  = @svgEditor+'/'+name[i]
-					end					
+					end
 				end
-				if (@svgEditor)						
-					cmd = "setSvgEditor('"+@svgEditor+"')";				
+				if (@svgEditor)
+					cmd = "setSvgEditor('"+@svgEditor+"')";
 					d.execute_script(cmd);
 				end
-			}				
-			
+			}
+
 			# Show the dlg
-			@dlg.set_background_color("f3f0f0");
-			@dlg.set_file(html, nil)
+
+			@dlg.set_url(html)
 			@dlg.show{
 				hiddenCheck = "false";
 				if (@exportHiddenLines)
 					hiddenCheck = "true"
-				end		
+				end
 				outlineCheck = "false";
 				if (@exportOutlines)
 					outlineCheck = "true"
-				end	
+				end
 				linesCheck = "false";
 				if (@exportInternalLines)
 					linesCheck = "true"
@@ -290,7 +298,7 @@ class SvgExport
 				orphansCheck = "false";
 				if (@exportOrphanLines)
 					orphansCheck = "true"
-				end	
+				end
 				textCheck = "false";
 				if (@exportAnnotations)
 					textCheck = "true"
@@ -303,7 +311,7 @@ class SvgExport
 				if (@svgEditor)
 					ed = @svgEditor;
 				end
-								
+
 				cmd = "setDefaults('"+@svgFilename+","+@paperBorder+","+
 					@units+","+@exportSvgType+","+hiddenCheck+","+
 					outlineCheck+","+@outlineRGB+","+@outlineWidth+","+
@@ -311,18 +319,18 @@ class SvgExport
 					orphansCheck+","+@orphanRGB+","+@orphanWidth+","+
 					textCheck+","+@annotationRGB+","+@annotationWidth+","+
 					@annotationType+","+@annotationHeight+","+exec+","+ed+"')";
-				
+
 				@dlg.execute_script(cmd);
 			}
-			@dlg.set_on_close { @dlgOpen = false; }	
-			
+			@dlg.set_on_closed { @dlgOpen = false; }
+
 		else # Close if dlg already open
-			@dlgOpen = false; 
+			@dlgOpen = false;
 			@dlg.close();
 		end
 	end
-	
-	
+
+
 	#######################################################
 	# Create export ok dialog box for SVG templates
 	#######################################################	
@@ -742,7 +750,7 @@ class SvgExport
 		
 		#  Check if file already exists		
 		if File.exist?(@svgFilename)
-			code = UI.messagebox "File exists, are you sure you want to overwrite?", MB_OKCANCEL, "Error"		
+			code = UI.messagebox "File exists "+@svgFilename+", are you sure you want to overwrite?", MB_OKCANCEL, "Error"
 			if code == 2
 				return
 			end

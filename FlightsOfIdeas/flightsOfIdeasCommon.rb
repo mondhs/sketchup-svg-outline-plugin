@@ -1,3 +1,5 @@
+require 'sketchup.rb'
+
 ###########################################################
 #
 #    Google Sketchup Common Routines for Flights of Ideas Plugins

@@ -33,7 +33,7 @@ var svgEditorExec="";
 //////////////////////////////////////////////////////////////////////////////////////////////////
 function onFileSave()
 {
-	window.location='skp:on_file_save@'+document.getElementById("svgFilename").value;
+	sketchup.on_file_save(document.getElementById("svgFilename").value);
 }
 
 //////////////////////////////////////////////////////////////////////////////////////////////////
@@ -41,6 +41,7 @@ function onFileSave()
 //////////////////////////////////////////////////////////////////////////////////////////////////
 function onConfigureSvgEditor()
 {
+	alert("Not impl onConfigureSvgEditor");
 	window.location='skp:on_svg_editor_configure@'+svgEditorExec;
 }
 
@@ -73,14 +74,17 @@ function onOk()
 		exportAs = "lines";
 	if (document.getElementById("textType").selectedIndex == 0)
 		textAs = "SVG";		
-	if (document.getElementById("svgEditor").checked)
+	if (document.getElementById("svgEditor").checked){
 		execEditor = "true";
 		editor = document.getElementById("svgEditorPath").value;				
-	window.location='skp:on_ok@'+document.getElementById("svgFilename").value+","+document.getElementById("paperBorder").value+","+previousUnits+","+exportAs+","+hidden+","+outline+","+
+	}
+
+  var param1 = ""+document.getElementById("svgFilename").value+","+document.getElementById("paperBorder").value+","+previousUnits+","+exportAs+","+hidden+","+outline+","+
 		document.getElementById("outlineColour").value+","+document.getElementById("outlineLineWidth").value+","+dissect+","+document.getElementById("dissectColour").value+","+
 		document.getElementById("dissectLineWidth").value+","+orphans+","+document.getElementById("orphanColour").value+","+document.getElementById("orphanLineWidth").value+","+
 		text+","+document.getElementById("textColour").value+","+document.getElementById("textLineWidth").value+","+textAs+","+document.getElementById("textHeight").value+","+
 		execEditor+","+editor;
+		sketchup.on_ok(param1);
 }
 
 //////////////////////////////////////////////////////////////////////////////////////////////////
@@ -88,7 +92,7 @@ function onOk()
 //////////////////////////////////////////////////////////////////////////////////////////////////
 function onCancel()
 {
-	window.location='skp:on_close';
+	sketchup.on_close();
 }
 
 //////////////////////////////////////////////////////////////////////////////////////////////////
@@ -96,7 +100,7 @@ function onCancel()
 //////////////////////////////////////////////////////////////////////////////////////////////////
 function onHelp()
 {
-	window.location='skp:on_help';
+	sketchup.on_help();
 }
 
 //////////////////////////////////////////////////////////////////////////////////////////////////
@@ -140,6 +144,7 @@ function changeUnits()
 //////////////////////////////////////////////////////////////////////////////////////////////////
 function setDefaults(defaults)
 {	
+	alert("setDefaults: " + defaults)
 	document.getElementById("exportHidden").checked = false;
 	document.getElementById("exportOutline").checked = true;
 	document.getElementById("exportdissect").checked = false;
@@ -156,9 +161,9 @@ function setDefaults(defaults)
 		changeUnits();
 	}
 	
-	document.getElementById("exporttype").selectedIndex = 0;
+	document.getElementById("exportType").selectedIndex = 0;
 	if (args[3] == "lines")
-		document.getElementById("exporttype").selectedIndex = 1;	
+		document.getElementById("exportType").selectedIndex = 1;
 	
 	if (args[4] == "true")
 		document.getElementById("exportHidden").checked = true;	
@@ -259,7 +264,7 @@ function doLoad()
 				<tr>
 					<td width="4.5%"></td>
 					<td width="25%"><p class="heading-green">Group exported face(s) as: </p></td>
-					<td width="25%"><select width="100%" id="exporttype">									
+					<td width="25%"><select width="100%" id="exportType">
 									<option id="paths">Paths...</option>
 									<option id="lines">Lines...</option>									
 								</select></td>
